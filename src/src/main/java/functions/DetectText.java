@@ -28,7 +28,7 @@ public class DetectText implements HttpFunction {
             throws IOException {
         // Check URL parameters for "name" field
         // "world" is the default value555
-        String encodedImgData;
+        String encodedImgData = "No Image Found";
         String  imageText;
         byte[] imgData = null;
 
@@ -54,11 +54,12 @@ public class DetectText implements HttpFunction {
         if(imgData != null) {
             imageText = detectTextInImage(imgData);
         }else{
-            imageText = "No Image Found";
+            imageText = "failed to parse image";
         }
 
         var writer = new PrintWriter(response.getWriter());
         writer.println(request.getFirstQueryParameter("image_data"));
+        writer.println(encodedImgData);
         writer.printf(imageText);
     }
 
