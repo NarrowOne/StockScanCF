@@ -58,6 +58,7 @@ public class DetectText implements HttpFunction {
         }
 
         var writer = new PrintWriter(response.getWriter());
+        writer.println(request.getFirstQueryParameter("image_data"));
         writer.printf(imageText);
     }
 
