@@ -26,17 +26,19 @@ public class DetectText implements HttpFunction {
     @Override
     public void service(HttpRequest request, HttpResponse response)
             throws IOException {
-        // Check URL parameters for "name" field
-        // "world" is the default value555
         String encodedImgData = "No Image Found";
         String  imageText;
         byte[] imgData = null;
 
+        var writer = new PrintWriter(response.getWriter());
+
         request.getFirstQueryParameter("image_data");
-        // Parse JSON request and check for "name" field
+        // Parse JSON request and check for "image_data" field
         try {
             JsonElement requestParsed = gson.fromJson(request.getReader(), JsonElement.class);
             JsonObject requestJson = null;
+
+            writer.println("JsonElement initialized");
 
             if (requestParsed != null && requestParsed.isJsonObject()) {
                 requestJson = requestParsed.getAsJsonObject();
@@ -57,7 +59,6 @@ public class DetectText implements HttpFunction {
             imageText = "failed to parse image";
         }
 
-        var writer = new PrintWriter(response.getWriter());
         writer.println(request.getFirstQueryParameter("image_data"));
         writer.println(encodedImgData);
         writer.printf(imageText);
