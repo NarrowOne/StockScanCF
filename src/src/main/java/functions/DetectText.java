@@ -34,6 +34,7 @@ public class DetectText implements HttpFunction {
 
         request.getFirstQueryParameter("image_data");
         // Parse JSON request and check for "image_data" field
+        writer.println("try/catch start");
         try {
             JsonElement requestParsed = gson.fromJson(request.getReader(), JsonElement.class);
             JsonObject requestJson = null;
@@ -52,6 +53,7 @@ public class DetectText implements HttpFunction {
             logger.severe("Error parsing JSON: " + e.getMessage());
         }
 
+        writer.println("try/catch end");
 
         if(imgData != null) {
             imageText = detectTextInImage(imgData);
