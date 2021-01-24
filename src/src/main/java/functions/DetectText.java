@@ -4,11 +4,9 @@ import com.google.api.client.util.Base64;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.cloud.vision.v1.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
@@ -21,49 +19,52 @@ import java.util.logging.Logger;
 public class DetectText implements HttpFunction {
     private static final Logger logger = Logger.getLogger(DetectText.class.getName());
     private static final Gson gson = new Gson();
+    private static PrintWriter writer;
 
 
     @Override
     public void service(HttpRequest request, HttpResponse response)
             throws IOException {
-        String encodedImgData = "No Image Found";
+        String contentType = request.getContentType().toString();
+        String encodedImgData = "N/A";
         String  imageText;
         byte[] imgData = null;
 
-        var writer = new PrintWriter(response.getWriter());
+        writer = new PrintWriter(response.getWriter());
 
         request.getFirstQueryParameter("image_data");
         // Parse JSON request and check for "image_data" field
-        writer.println("try/catch start");
+
+//        writer.write(contentType);
+
         try {
-            JsonElement requestParsed = gson.fromJson(request.getReader(), JsonElement.class);
-            JsonObject requestJson = null;
+            JsonObject body = gson.fromJson(request.getReader(), JsonObject.class);
 
-            writer.println("JsonElement initialized");
-
-            if (requestParsed != null && requestParsed.isJsonObject()) {
-                requestJson = requestParsed.getAsJsonObject();
-            }
-
-            if (requestJson != null && requestJson.has("image_data")) {
-                encodedImgData = requestJson.get("image_data").getAsString();
+//            writer.write("Searching for image data");
+            if (body != null && body.has("image_data")) {
+                encodedImgData = body.get("image_data").getAsString();
                 imgData = decodeBase64(encodedImgData);
+            } else {
+//                writer.write("Failed to find image data");
             }
-        } catch (JsonParseException e) {
+
+        } catch (Exception e) {
             logger.severe("Error parsing JSON: " + e.getMessage());
         }
 
-        writer.println("try/catch end");
-
-        if(imgData != null) {
+//        If image data has been retrieved from request body and decoded, run through OCR
+        if (imgData != null) {
             imageText = detectTextInImage(imgData);
-        }else{
+        } else {
             imageText = "failed to parse image";
         }
 
-        writer.println(request.getFirstQueryParameter("image_data"));
-        writer.println(encodedImgData);
-        writer.printf(imageText);
+//        writer.write("{\"image_text\":\""+imageText+"\"}");
+
+        String json =   "{\"image_text\":\""+imageText+"\"}";
+        JsonObject res = gson.fromJson(json, JsonObject.class);
+        writer.print(res);
+
     }
 
     private String detectTextInImage(byte[] imgData) throws IOException{
