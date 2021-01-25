@@ -1,19 +1,21 @@
 package functions;
 
+import com.google.api.client.json.Json;
 import com.google.api.client.util.Base64;
 import com.google.cloud.functions.HttpFunction;
 import com.google.cloud.functions.HttpRequest;
 import com.google.cloud.functions.HttpResponse;
+import com.google.gson.*;
 import com.google.cloud.vision.v1.*;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.*;
 
 
 public class DetectText implements HttpFunction {
@@ -62,7 +64,9 @@ public class DetectText implements HttpFunction {
 //        writer.write("{\"image_text\":\""+imageText+"\"}");
 
         String json =   "{\"image_text\":\""+imageText+"\"}";
+
         JsonObject res = gson.fromJson(json, JsonObject.class);
+
         writer.print(res);
 
     }
@@ -82,6 +86,7 @@ public class DetectText implements HttpFunction {
             BatchAnnotateImagesResponse response = client.batchAnnotateImages(requests);
             List<AnnotateImageResponse> responses = response.getResponsesList();
 
+            int loopRuns = 0;
             for(AnnotateImageResponse res : responses){
                 if(res.hasError()){
                     text = "Error: " + res.getError().getMessage();
@@ -91,6 +96,7 @@ public class DetectText implements HttpFunction {
                     System.out.printf("Text: %s%n", annotation.getDescription());
                     text += annotation.getDescription();
                 }
+                loopRuns++;
             }
         }
 
