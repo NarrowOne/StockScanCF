@@ -8,6 +8,7 @@ import com.google.cloud.vision.v1.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.protobuf.ByteString;
+import utils.FunctionLog;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -20,9 +21,10 @@ import java.util.logging.Logger;
 
 public class FunctionMain implements HttpFunction {
     private static final Logger logger = Logger.getLogger(FunctionMain.class.getName());
+    private static final String TAG = "FunctionMain";
     private static final Gson gson = new Gson();
+    private TextDetector detector;
     private static PrintWriter writer;
-    private FunctionLog log;
     private String error;
 
 
@@ -42,8 +44,7 @@ public class FunctionMain implements HttpFunction {
 
         String contentType = request.getContentType().orElse("No type detected");
         String responseString = "{\n";
-        log  = new FunctionLog();
-        log.addLog(contentType);
+        FunctionLog.addLog(TAG, contentType);
 //        log.addLog(payload);
 
         switch(contentType){
@@ -60,7 +61,9 @@ public class FunctionMain implements HttpFunction {
                 responseString += "\"error\" : \"400 - Bad Request\"\n";
         }
 
-        responseString += log.getLog();
+        FunctionLog.addLog(TAG, "Function End");
+
+        responseString += FunctionLog.getLog();
 
         responseString += "}";
 //        JsonObject res = gson.fromJson(json, JsonObject.class);
@@ -76,7 +79,7 @@ public class FunctionMain implements HttpFunction {
         byte[] imgData = null;
 
         try {
-            log.addLog("retrieving json data");
+            FunctionLog.addLog(TAG, "retrieving json data");
             if (body.has("image_data")) {
                 String encodedImgData = body.get("image_data").getAsString();
                 if (encodedImgData != null) {
@@ -89,10 +92,9 @@ public class FunctionMain implements HttpFunction {
                 }
 
                 if (imgData != null) {
-                    imageText = detectTextInImage(imgData);
-                    responseString += "\"image_text\":\"" + imageText + "\",\n";
+                    responseString += "\"image_text\":\"" + getImageText(imgData) + "\",\n";
                 } else {
-                    log.addLog("Image Data Missing");
+                    FunctionLog.addLog(TAG, "Image Data Missing");
                 }
             }
         }catch (Exception e){
@@ -109,10 +111,11 @@ public class FunctionMain implements HttpFunction {
         byte[] imgData = null;
 
         try {
-            log.addLog("retrieving form data");
+            FunctionLog.addLog(TAG, "retrieving form data");
             Optional<String> encodedImgData = request.getFirstQueryParameter("image_data");
 
-            log.addLog(
+            FunctionLog.addLog(
+                    TAG,
                     encodedImgData.isPresent() ? "Image data present" : "Image data missing"
             );
 
@@ -132,73 +135,22 @@ public class FunctionMain implements HttpFunction {
 
 //        If image data has been retrieved from request body and decoded, run through OCR
         if (imgData != null) {
-            imageText = detectTextInImage(imgData);
-            responseString += "\"image_text\":\""+imageText+"\",\n";
+            responseString += "\"image_text\":\""+getImageText(imgData)+"\",\n";
         } else {
-            log.addLog("Image Data Missing");
+            FunctionLog.addLog(TAG, "Image Data Missing");
         }
 
         return responseString;
     }
 
-    private String detectTextInImage(byte[] imgData) throws IOException{
-        List<AnnotateImageRequest> requests = new ArrayList<>();
-        String text = "";
-//        ByteString imgBytes = ByteString.copyFrom(imgData);
-
-        Image img = Image.newBuilder().setContent(ByteString.copyFrom(imgData)).build();
-        Feature feat = Feature.newBuilder().setType(Feature.Type.TEXT_DETECTION).build();
-        AnnotateImageRequest request =
-                AnnotateImageRequest.newBuilder().addFeatures(feat).setImage(img).build();
-        requests.add(request);
-
-        try(ImageAnnotatorClient client = ImageAnnotatorClient.create()){
-            BatchAnnotateImagesResponse response = client.batchAnnotateImages(requests);
-            List<AnnotateImageResponse> responses = response.getResponsesList();
-
-            int loopRuns = 0;
-            for(AnnotateImageResponse res : responses){
-                if(res.hasError()){
-                    text = "Error: " + res.getError().getMessage();
-                }
-
-                for(EntityAnnotation annotation : res.getTextAnnotationsList()){
-                    System.out.printf("Text: %s%n", annotation.getDescription());
-                    text += annotation.getDescription();
-                }
-                loopRuns++;
-            }
-            text = text.replaceAll("\n", " ; ");
-        }
-
-        return text;
+    private String getImageText(byte[] imgBytes){
+        detector = new TextDetector(imgBytes);
+        return detector.performOCR();
     }
 
     private byte[] decodeBase64(String encodedStr){
         return Base64.decodeBase64(encodedStr);
     }
 
-    private static class FunctionLog{
-        private String log;
-        private int logNumber;
 
-        private FunctionLog(){
-            log = "\"Log\" : {\n";
-            logNumber = 0;
-        }
-
-        private void addLog(String line){
-            log += "\""+logNumber+"\" : \""+line+"\",\n";
-            logNumber++;
-        }
-
-        private String getLog(){
-            if(log.endsWith(",\n"))
-                log = log.substring(0, log.length()-2);
-
-            log += "\n}";
-
-            return log;
-        }
-    }
 }
