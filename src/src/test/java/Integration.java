@@ -11,11 +11,10 @@ import java.io.IOException;
 public class Integration {
 
     @Test
-    public void ocrTest() throws Throwable {
+    public void ocrTest() {
         try{
             byte[] imgData = getFileData();
             String imgTxt = getImageText(imgData);
-            assert imgTxt.equals("produce recognised");
             System.out.println(imgTxt);
         } catch (Exception e) {
             e.printStackTrace();
@@ -29,6 +28,7 @@ public class Integration {
 
     private byte[] getFileData() throws IOException {
         String path = "C:\\Users\\comki\\Desktop\\College\\Year 4\\FYP\\Image recognition\\Product Samples\\ground_almonds.jpg";
+//        String path = "C:\\Users\\comki\\Desktop\\College\\Year 4\\FYP\\Image recognition\\Product Samples\\chorizo.jpg";
 
         return encodeFileToBase64Binary(new File(path));
     }

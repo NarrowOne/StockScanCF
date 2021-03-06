@@ -14,6 +14,7 @@ import java.util.List;
 public class TextDetector {
     private static final String TAG = "TextDetector";
     private byte[] imgData;
+    HashMap<String, Object> currentProduce;
 
 
     public TextDetector(byte[] imgData){
@@ -22,47 +23,18 @@ public class TextDetector {
 
     public String performOCR(){
 
-        String[] text = detectTextInImage(imgData);
+        String text = detectTextInImage(imgData);
         if(recognisedProduce(text)){
-            return "produce recognised";
+            return getProduceDetails(text);
         }
 
-        return "produce not recognised";
+        return "\"error\" : \"Produce not recognised\",\n";
     }
 
-    private boolean recognisedProduce(String[] text) {
-        if(text == null)
-            return false;
-
-        boolean name=false, code=false, producer=false;
-
-        DAO dao = new RecognisedProduceDAO();
-        List<HashMap<String, Object>> produceList = dao.getFullTable();
-
-        for(String line : text){
-            for(HashMap<String,Object>produce : produceList){
-                if(!name){
-                    if(line.contains((CharSequence) produce.get("name")))
-                        name = true;
-                }
-                if(!code){
-                    if(line.contains((CharSequence) produce.get("product_code")))
-                        code = true;
-                }
-                if(!producer){
-                    if(line.contains((CharSequence) produce.get("producer")))
-                        producer= true;
-                }
-            }
-        }
-
-        return (name&&code&&producer);
-    }
-
-    private String[] detectTextInImage(byte[] imgData){
+    private String detectTextInImage(byte[] imgData){
         FunctionLog.addLog(TAG,"Begging text detection");
         List<AnnotateImageRequest> requests = new ArrayList<>();
-        List<String> text = new ArrayList<>();
+        String text = "";
 //        ByteString imgBytes = ByteString.copyFrom(imgData);
 
         Image img = Image.newBuilder().setContent(ByteString.copyFrom(imgData)).build();
@@ -78,21 +50,99 @@ public class TextDetector {
             int loopRuns = 0;
             for(AnnotateImageResponse res : responses){
                 if(res.hasError()){
-                    text.add("Error: " + res.getError().getMessage());
+                    text = TAG+" - Error: " + res.getError().getMessage();
                 }
-
-                for(EntityAnnotation annotation : res.getTextAnnotationsList()){
-                    text.add(annotation.getDescription());
-                    loopRuns++;
-                }
+                    text = res.getFullTextAnnotation().getText();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return text.toArray(new String[0]);
+        return text;
     }
 
+    private boolean recognisedProduce(String text) {
+        if(text == null)
+            return false;
 
+        boolean name=false, code=false, producer=false;
+
+        DAO dao = new RecognisedProduceDAO();
+        List<HashMap<String, Object>> produceList = dao.getFullTable();
+
+        for(int i = 0; i < produceList.size(); i++){
+            HashMap<String, Object> produce = produceList.get(i);
+            if(!name){
+                if(text.contains((CharSequence) produce.get("name")))
+                    name = true;
+            }
+            if(!code){
+                if(text.contains((CharSequence) produce.get("product_code")))
+                    code = true;
+            }
+            if(!producer){
+                if(text.contains((CharSequence) produce.get("producer")))
+                    producer= true;
+            }
+
+            if(name&&code&&producer){
+                currentProduce = produce;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private String getProduceDetails(String text){
+        String[] weightWords = {"weight"};
+        String[] batchWords = {"batch", "lot"};
+        String[] expWords = {"use by", "best before"};
+
+        StringBuilder json = new StringBuilder();
+        text = text.toLowerCase();
+
+        if(currentProduce == null){
+            FunctionLog.addLog(TAG, "current produce not set;");
+            return null;
+        }
+
+        json.append("\"produce_details\" : {\n");
+        json.append("\"name\" : \""+currentProduce.get("name")+"\",\n");
+        json.append("\"code\" : \""+currentProduce.get("product_code")+"\",\n");
+        json.append("\"producer\" : \""+currentProduce.get("producer")+"\",\n");
+        String[] textBlock = text.split("\n");
+        //find batch code
+        for(String word : batchWords) {
+            for (String line : textBlock) {
+                if (line.contains(word)) {
+                    json.append("\"batch\" : \"" + line + "\",\n");
+                }
+            }
+        }
+//        find weight
+        for(String word : weightWords) {
+            for(String line : textBlock) {
+                if (line.contains(word)) {
+                    json.append("\"weight\" : \"" + line + "\",\n");
+                }
+            }
+        }
+        //find expiry date
+        for(String word : expWords){
+            for(String line : textBlock) {
+                if (line.contains(word)) {
+                    json.append("\"expiration\" : \"" + line + "\"\n},\n");
+                }
+            }
+        }
+
+//        if(weight == null || batch == null || expiration == null){
+//            FunctionLog.addLog(TAG, "Missing produce details");
+//            return null;
+//        }
+
+        return json.toString();
+    }
 
 }

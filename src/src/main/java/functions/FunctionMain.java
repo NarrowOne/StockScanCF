@@ -33,16 +33,9 @@ public class FunctionMain implements HttpFunction {
             throws IOException {
         writer = new PrintWriter(response.getWriter());
         writer.flush();
-//        BufferedReader reader = request.getReader();
-//        String payload = "PAYLOAD: "+reader.readLine();
-//        reader.close();
-//        InputStream stream = request.getInputStream();
-//        String payload = "PAYLOAD: "+ Arrays.toString(Base64.decodeBase64(stream.readAllBytes()));
-//        stream.close();
-
-//        logger.info(payload);
 
         String contentType = request.getContentType().orElse("No type detected");
+//        String responseString = "{\"response\" : {\n";
         String responseString = "{\n";
         FunctionLog.addLog(TAG, contentType);
 //        log.addLog(payload);
@@ -83,7 +76,7 @@ public class FunctionMain implements HttpFunction {
             if (body.has("image_data")) {
                 String encodedImgData = body.get("image_data").getAsString();
                 if (encodedImgData != null) {
-                    responseString += "\"encoded_data\":\"" + encodedImgData + "\",\n";
+//                    responseString += "\"encoded_data\":\"" + encodedImgData + "\",\n";
 
                     imgData = decodeBase64(encodedImgData);
                 } else {
@@ -91,8 +84,9 @@ public class FunctionMain implements HttpFunction {
                     responseString += "\"error\" : \"" + error + "\",\n";
                 }
 
+//              If image data has been retrieved from request body and decoded, run through OCR
                 if (imgData != null) {
-                    responseString += "\"image_text\":\"" + getImageText(imgData) + "\",\n";
+                    responseString += getImageText(imgData);
                 } else {
                     FunctionLog.addLog(TAG, "Image Data Missing");
                 }
@@ -120,7 +114,7 @@ public class FunctionMain implements HttpFunction {
             );
 
             if (encodedImgData.isPresent()) {
-                responseString +="\"encoded_data\":\""+encodedImgData.get()+"\",\n";
+//                responseString +="\"encoded_data\":\""+encodedImgData.get()+"\",\n";
 
                 imgData = decodeBase64(encodedImgData.get());
             } else {
@@ -135,7 +129,7 @@ public class FunctionMain implements HttpFunction {
 
 //        If image data has been retrieved from request body and decoded, run through OCR
         if (imgData != null) {
-            responseString += "\"image_text\":\""+getImageText(imgData)+"\",\n";
+            responseString += getImageText(imgData);
         } else {
             FunctionLog.addLog(TAG, "Image Data Missing");
         }
