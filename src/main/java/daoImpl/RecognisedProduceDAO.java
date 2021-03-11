@@ -15,7 +15,8 @@ public class RecognisedProduceDAO implements DAO {
     @Override
     public List<HashMap<String, Object>> getFullTable() {
         FunctionLog.addLog(TAG, "Attempting to get recognised products");
-        Connection con = Database.getConnection();
+        Database db = Database.getInstance();
+        Connection con = db.getConnection();
 
         try{
             Statement stmt = con.createStatement();
@@ -24,6 +25,12 @@ public class RecognisedProduceDAO implements DAO {
         } catch (SQLException throwable) {
             FunctionLog.addLog(TAG, throwable.getMessage());
             logger.severe(throwable.toString());
+        }finally {
+            try {
+                con.close();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
         }
         return null;
     }
