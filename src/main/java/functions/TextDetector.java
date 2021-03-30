@@ -1,37 +1,44 @@
 package functions;
 
+import builder.builderImpl.ProduceQuickBuild;
+import builder.director.ProduceDirector;
 import com.google.cloud.vision.v1.*;
 import com.google.protobuf.ByteString;
 import dao.DAO;
-import daoImpl.RecognisedProduceDAO;
+import dao.daoImpl.RecognisedProduceDAO;
 import utils.FunctionLog;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class TextDetector {
     private static final String TAG = "TextDetector";
-    private byte[] imgData;
-    HashMap<String, Object> currentProduce;
+//    private byte[] imgData;
+//    HashMap<String, Object> currentProduce;
 
+    public TextDetector(){
 
-    public TextDetector(byte[] imgData){
-        this.imgData = imgData;
     }
 
-    public String performOCR(){
+//    public TextDetector(byte[] imgData){
+//        this.imgData = imgData;
+//    }
 
-        String text = detectTextInImage(imgData);
-        if(recognisedProduce(text)){
-            return getProduceDetails(text);
+    public static String performOCR(byte[] imgData){
+
+        String text = detectTextInImage(imgData)/*.toLowerCase(Locale.ROOT)*/;
+        HashMap<String, Object> currentProduce = recognisedProduce(text, new HashMap<>());
+        if(!currentProduce.isEmpty()){
+            return getProduceDetails(text, currentProduce);
         }
 
         return "\"error\" : \"Produce not recognised\",\n";
     }
 
-    private String detectTextInImage(byte[] imgData){
+    private static String detectTextInImage(byte[] imgData){
         FunctionLog.addLog(TAG,"Begging text detection");
         List<AnnotateImageRequest> requests = new ArrayList<>();
         String text = "";
@@ -61,9 +68,9 @@ public class TextDetector {
         return text;
     }
 
-    private boolean recognisedProduce(String text) {
+    private static HashMap<String, Object> recognisedProduce(String text, HashMap<String, Object> currentProduce) {
         if(text == null)
-            return false;
+            return currentProduce;
 
         boolean name=false, code=false, producer=false;
 
@@ -87,62 +94,22 @@ public class TextDetector {
 
             if(name&&code&&producer){
                 currentProduce = produce;
-                return true;
+                return currentProduce;
+            }else{
+                name =false;
+                code = false;
+                producer = false;
             }
         }
 
-        return false;
+        return currentProduce;
     }
 
-    private String getProduceDetails(String text){
-        String[] weightWords = {"weight"};
-        String[] batchWords = {"batch", "lot"};
-        String[] expWords = {"use by", "best before"};
+    private static String getProduceDetails(String text, HashMap<String, Object> currentProduce){
+        ProduceDirector director = new ProduceDirector(new ProduceQuickBuild(currentProduce, text));
+        director.buildProduce();
 
-        StringBuilder json = new StringBuilder();
-        text = text.toLowerCase();
-
-        if(currentProduce == null){
-            FunctionLog.addLog(TAG, "current produce not set;");
-            return null;
-        }
-
-        json.append("\"produce_details\" : {\n");
-        json.append("\"name\" : \""+currentProduce.get("name")+"\",\n");
-        json.append("\"code\" : \""+currentProduce.get("product_code")+"\",\n");
-        json.append("\"producer\" : \""+currentProduce.get("producer")+"\",\n");
-        String[] textBlock = text.split("\n");
-        //find batch code
-        for(String word : batchWords) {
-            for (String line : textBlock) {
-                if (line.contains(word)) {
-                    json.append("\"batch\" : \"" + line + "\",\n");
-                }
-            }
-        }
-//        find weight
-        for(String word : weightWords) {
-            for(String line : textBlock) {
-                if (line.contains(word)) {
-                    json.append("\"weight\" : \"" + line + "\",\n");
-                }
-            }
-        }
-        //find expiry date
-        for(String word : expWords){
-            for(String line : textBlock) {
-                if (line.contains(word)) {
-                    json.append("\"expiration\" : \"" + line + "\"\n},\n");
-                }
-            }
-        }
-
-//        if(weight == null || batch == null || expiration == null){
-//            FunctionLog.addLog(TAG, "Missing produce details");
-//            return null;
-//        }
-
-        return json.toString();
+        return director.getProduce().getJsonString();
     }
 
 }

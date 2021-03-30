@@ -138,8 +138,7 @@ public class FunctionMain implements HttpFunction {
     }
 
     private String getImageText(byte[] imgBytes){
-        detector = new TextDetector(imgBytes);
-        return detector.performOCR();
+        return TextDetector.performOCR(imgBytes);
     }
 
     private byte[] decodeBase64(String encodedStr){

@@ -22,8 +22,8 @@ public class OCR {
     }
 
     private String getImageText(byte[] imgBytes){
-        TextDetector detector = new TextDetector(imgBytes);
-        return detector.performOCR();
+//        TextDetector detector = new TextDetector(imgBytes);
+        return TextDetector.performOCR(imgBytes);
     }
 
     private byte[] getFileData() throws IOException {
