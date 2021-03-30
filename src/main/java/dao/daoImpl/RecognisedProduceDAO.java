@@ -1,11 +1,10 @@
-package daoImpl;
+package dao.daoImpl;
 
 import dao.DAO;
 import database.Database;
 import utils.FunctionLog;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
