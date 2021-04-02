@@ -13,29 +13,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TextDetector {
+    private static final Logger logger = Logger.getLogger(TextDetector.class.getName());
     private static final String TAG = "TextDetector";
-//    private byte[] imgData;
-//    HashMap<String, Object> currentProduce;
 
     public TextDetector(){
-
     }
 
-//    public TextDetector(byte[] imgData){
-//        this.imgData = imgData;
-//    }
-
     public static String performOCR(byte[] imgData){
-
         String text = detectTextInImage(imgData)/*.toLowerCase(Locale.ROOT)*/;
         HashMap<String, Object> currentProduce = recognisedProduce(text, new HashMap<>());
         if(!currentProduce.isEmpty()){
             return getProduceDetails(text, currentProduce);
         }
 
-        return "\"error\" : \"Produce not recognised\",\n";
+        return "\"error\" : \"Produce not recognised:\n"+"\",\n";
     }
 
     private static String detectTextInImage(byte[] imgData){
@@ -71,32 +67,49 @@ public class TextDetector {
     private static HashMap<String, Object> recognisedProduce(String text, HashMap<String, Object> currentProduce) {
         if(text == null)
             return currentProduce;
+        Pattern pattern;
+        Matcher matcher;
 
         boolean name=false, code=false, producer=false;
 
         DAO dao = new RecognisedProduceDAO();
         List<HashMap<String, Object>> produceList = dao.getFullTable();
+        logger.warning(text);
+        logger.warning(produceList.toString());
 
-        for(int i = 0; i < produceList.size(); i++){
-            HashMap<String, Object> produce = produceList.get(i);
-            if(!name){
-                if(text.contains((CharSequence) produce.get("name")))
+        for (HashMap<String, Object> produce : produceList) {
+            if (!name) {
+                pattern = Pattern.compile((String) produce.get("name"), Pattern.CASE_INSENSITIVE);
+                matcher = pattern.matcher(text);
+                if (matcher.find()) {
+                    logger.warning("name match");
                     name = true;
+                }
             }
-            if(!code){
-                if(text.contains((CharSequence) produce.get("product_code")))
+            if (!code) {
+                pattern = Pattern.compile((String) produce.get("product_code"), Pattern.CASE_INSENSITIVE);
+                matcher = pattern.matcher(text);
+                if (matcher.find()) {
+                    logger.warning("code match");
                     code = true;
+                }
             }
-            if(!producer){
-                if(text.contains((CharSequence) produce.get("producer")))
-                    producer= true;
+            logger.warning(String.valueOf(text.contains((CharSequence) produce.get("producer"))));
+            if (!producer) {
+                pattern = Pattern.compile((String) produce.get("producer"), Pattern.CASE_INSENSITIVE);
+                matcher = pattern.matcher(text);
+                if (matcher.find()) {
+                    logger.warning("producer match");
+                    producer = true;
+                }
             }
 
-            if(name&&code&&producer){
+            if (name && code && producer) {
+                logger.warning("full match");
                 currentProduce = produce;
                 return currentProduce;
-            }else{
-                name =false;
+            } else {
+                name = false;
                 code = false;
                 producer = false;
             }
@@ -109,7 +122,7 @@ public class TextDetector {
         ProduceDirector director = new ProduceDirector(new ProduceQuickBuild(currentProduce, text));
         director.buildProduce();
 
-        return director.getProduce().getJsonString();
+        return "\"produce_details\" : "+director.getProduce().getJsonString()+",\n";
     }
 
 }
