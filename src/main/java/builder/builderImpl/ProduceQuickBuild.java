@@ -3,6 +3,7 @@ package builder.builderImpl;
 import builder.ProduceBuilder;
 import models.Produce;
 
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -20,13 +21,18 @@ public class ProduceQuickBuild implements ProduceBuilder {
     }
 
     @Override
+    public void buildID() {
+        produce.setId(0);
+    }
+
+    @Override
     public void buildName() {
         produce.setName((String) details.get("name"));
     }
 
     @Override
     public void buildProdCode() {
-        produce.setProductCode((String) details.get("product_code"));
+        produce.setProduct_code((String) details.get("product_code"));
 
     }
 
@@ -88,7 +94,11 @@ public class ProduceQuickBuild implements ProduceBuilder {
         else if(expLine.contains(" "))
             expLine = expLine.replace(" ", "/");
 
-        produce.setExpiry(expLine);
+        try {
+            produce.setExpiry(expLine);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
 
 
