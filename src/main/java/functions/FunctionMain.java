@@ -8,6 +8,8 @@ import com.google.cloud.vision.v1.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.protobuf.ByteString;
+import dao.daoImpl.ProduceDAO;
+import models.Produce;
 import utils.FunctionLog;
 
 import java.io.IOException;
@@ -23,15 +25,13 @@ public class FunctionMain implements HttpFunction {
     private static final Logger logger = Logger.getLogger(FunctionMain.class.getName());
     private static final String TAG = "FunctionMain";
     private static final Gson gson = new Gson();
-    private TextDetector detector;
-    private static PrintWriter writer;
     private String error;
 
 
     @Override
     public void service(HttpRequest request, HttpResponse response)
             throws IOException {
-        writer = new PrintWriter(response.getWriter());
+        PrintWriter writer = new PrintWriter(response.getWriter());
         writer.flush();
 
         String contentType = request.getContentType().orElse("No type detected");
@@ -73,27 +73,57 @@ public class FunctionMain implements HttpFunction {
 
         try {
             FunctionLog.addLog(TAG, "retrieving json data");
-            if (body.has("image_data")) {
-                String encodedImgData = body.get("image_data").getAsString();
-                if (encodedImgData != null) {
+            if(body.has("request_type")){
+                switch (body.get("request_type").getAsString()){
+                    case "ocr":
+                        if (body.has("image_data")) {
+                            String encodedImgData = body.get("image_data").getAsString();
+                            if (encodedImgData != null) {
 //                    responseString += "\"encoded_data\":\"" + encodedImgData + "\",\n";
 
-                    imgData = decodeBase64(encodedImgData);
-                } else {
-                    error = "Failed to find image data";
-                    responseString += "\"error\" : \"" + error + "\",\n";
-                }
+                                imgData = decodeBase64(encodedImgData);
+                            } else {
+                                error = "Failed to find image data";
+                                responseString += "\"error\" : \"" + error + "\",\n";
+                            }
 
 //              If image data has been retrieved from request body and decoded, run through OCR
-                if (imgData != null) {
-                    responseString += getImageText(imgData);
-                } else {
-                    FunctionLog.addLog(TAG, "Image Data Missing");
+                            if (imgData != null) {
+                                responseString += getImageText(imgData);
+                            } else {
+                                FunctionLog.addLog(TAG, "Image Data Missing");
+                            }
+                        }
+                        break;
+                    case "save":
+                        if(body.has("produce_details")){
+                            CRUDController controller = new CRUDController(new ProduceDAO());
+                            body = body.getAsJsonObject("produce_details");
+
+                            Produce produce = new Produce(
+                                    body.get("name").getAsString(),
+                                    body.get("product_code").getAsString(),
+                                    body.get("producer").getAsString(),
+                                    body.get("batch").getAsString(),
+                                    body.get("weight").getAsString(),
+                                    body.get("expiry").getAsString()
+                            );
+
+                            responseString += controller.saveProduce(produce);
+                        }
+                        break;
+                    case "get_all":
+                        CRUDController controller = new CRUDController(new ProduceDAO());
+
+                        responseString += controller.getTable();
+                    default:
+                        break;
                 }
             }
         }catch (Exception e){
             error = e.getMessage();
             logger.severe(e.toString());
+            e.printStackTrace();
             responseString += "\"error\" : \"Exception: "+ error +"\",\n";
         }
 
