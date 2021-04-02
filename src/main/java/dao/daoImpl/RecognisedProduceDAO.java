@@ -2,35 +2,29 @@ package dao.daoImpl;
 
 import dao.DAO;
 import database.Database;
+import functions.FunctionMain;
 import utils.FunctionLog;
 
 import java.sql.*;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class RecognisedProduceDAO implements DAO {
+public class RecognisedProduceDAO extends DAO {
+    private static final Logger logger = Logger.getLogger(FunctionMain.class.getName());
     private static final String TAG = "RecognisedProduceDAO";
+
+    public RecognisedProduceDAO() {
+        super();
+    }
 
     @Override
     public List<HashMap<String, Object>> getFullTable() {
-        FunctionLog.addLog(TAG, "Attempting to get recognised products");
-        Database db = Database.getInstance();
-        Connection con = db.getConnection();
+        return getFullTable("recognized_produce");
+    }
 
-        try{
-            Statement stmt = con.createStatement();
-            List<HashMap<String, Object>> results = DAO.getResults(stmt.executeQuery("SELECT * FROM recognized_produce"));
-            return results;
-        } catch (SQLException throwable) {
-            FunctionLog.addLog(TAG, throwable.getMessage());
-            logger.severe(throwable.toString());
-        }finally {
-            try {
-                con.close();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
-        }
-        return null;
+    @Override
+    public int createEntry(Object dataObject) {
+        return 0;
     }
 }
