@@ -3,9 +3,10 @@ package dao.daoImpl;
 import dao.DAO;
 import database.Database;
 import functions.FunctionMain;
-import models.Produce;
+import models.LogEntry;
 import utils.FunctionLog;
 
+import javax.swing.text.html.parser.Entity;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,39 +14,39 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class ProduceDAO extends DAO<Produce> {
+public class LogDAO  extends DAO<LogEntry> {
     private static final Logger logger = Logger.getLogger(FunctionMain.class.getName());
-    private static final String TAG = "ProduceDAO";
-    private final String tableName = "produce";
+    private static final String TAG = "LogDAO";
+    private final String tableName = "logs";
 
-    public ProduceDAO() {
+    public LogDAO() {
         super();
     }
 
     @Override
     public List<HashMap<String, Object>> getFullTable() {
-        return getFullTable("produce");
+        return getFullTable(tableName);
     }
 
-
+    public List<HashMap<String, Object>> getLogsByType(int log_type) {
+        return getFullTable(tableName, "WHERE log_type = "+log_type);
+    }
 
     @Override
-    public int createEntry(Produce dataObject) {
+    public int createEntry(LogEntry dataObject) {
         if(dataObject == null){
-            logger.severe("no data object provided");
             return 0;
         }
-        logger.info(dataObject.getJsonString());
+        LogEntry record = dataObject;
 
-        FunctionLog.addLog(TAG, "Attempting to get recognised products");
+        FunctionLog.addLog(TAG, "Attempting to create new log");
         Database db = Database.getInstance();
         Connection con = db.getConnection();
 
         try{
             Statement stmt = con.createStatement();
-            return stmt.executeUpdate("INSERT INTO produce (producer, product_code, batch, name, weight, expiration)" +
-                                            "VALUES ('"+ dataObject.getProducer()+"','"+ dataObject.getProduct_code()+"','"+ dataObject.getBatch()+"'," +
-                                                    "'"+ dataObject.getName()+"','"+ dataObject.getWeight()+"','"+ dataObject.getExpiry()+"')");
+            return stmt.executeUpdate("INSERT INTO logs (log_type, subject, description)" +
+                    "VALUES ('"+record.getType()+"','"+record.getSubject()+"','"+record.getDescription()+"')");
         } catch (SQLException throwable) {
             FunctionLog.addLog(TAG, throwable.getMessage());
             logger.severe(throwable.toString());
@@ -60,25 +61,23 @@ public class ProduceDAO extends DAO<Produce> {
     }
 
     @Override
-    public int updateEntry(Produce dataObject) {
+    public int updateEntry(LogEntry dataObject) {
         if(dataObject == null){
             return 0;
         }
 
-        FunctionLog.addLog(TAG, "Attempting to get update product");
+        FunctionLog.addLog(TAG, "Attempting to get update log");
         Database db = Database.getInstance();
         Connection con = db.getConnection();
 
         try{
             Statement stmt = con.createStatement();
-            FunctionLog.addLog(TAG, dataObject.toString());
-            int result = stmt.executeUpdate("UPDATE produce" +
-                                                "\nSET producer='"+dataObject.getProducer()+"', product_code='"+dataObject.getProduct_code()+
-                                                    "', batch='"+dataObject.getBatch()+"', name='"+dataObject.getName()+
-                                                    "', weight='"+dataObject.getWeight()+"', expiration='"+dataObject.getExpiry()+
-                                                "'\nWHERE id="+dataObject.getId()+";");
-            FunctionLog.addLog(TAG, String.valueOf(result));
-            return result;
+            return stmt.executeUpdate("UPDATE logs" +
+                                        "\nSET log_type='"+dataObject.getType()+
+                                                "', subject='"+dataObject.getSubject()+
+                                                "', description='"+dataObject.getDescription()+
+                                        "'\nWHERE id="+dataObject.getId()+";");
+
         } catch (SQLException throwable) {
             FunctionLog.addLog(TAG, throwable.getMessage());
             logger.severe(throwable.toString());
@@ -89,22 +88,24 @@ public class ProduceDAO extends DAO<Produce> {
                 throwables.printStackTrace();
             }
         }
+
         return 0;
     }
 
     @Override
-    public int removeEntry(Produce dataObject) {
+    public int removeEntry(LogEntry dataObject) {
+
         if(dataObject == null){
             return 0;
         }
 
-        FunctionLog.addLog(TAG, "Attempting to get delete product");
+        FunctionLog.addLog(TAG, "Attempting to get delete log");
         Database db = Database.getInstance();
         Connection con = db.getConnection();
 
         try{
             Statement stmt = con.createStatement();
-            return stmt.executeUpdate("DELETE FROM produce" +
+            return stmt.executeUpdate("DELETE FROM logs" +
                                         "\nWHERE id="+dataObject.getId()+";");
         } catch (SQLException throwable) {
             FunctionLog.addLog(TAG, throwable.getMessage());

@@ -4,13 +4,14 @@ import database.Database;
 import functions.FunctionMain;
 import utils.FunctionLog;
 
+import javax.annotation.Nullable;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-public abstract class DAO {
+public abstract class DAO<T> {
     private static final Logger logger = Logger.getLogger(FunctionMain.class.getName());
     private static final String TAG = "DAO";
 
@@ -42,10 +43,8 @@ public abstract class DAO {
         return resultList;
     }
 
-    /**
-     *
-     * */
-    public List<HashMap<String, Object>> getFullTable(String table){
+    public List<HashMap<String, Object>> getFullTable(String... details){
+        String where = details.length > 1 ? " "+details[1] : ";";
 
         FunctionLog.addLog(TAG, "Attempting to get recognised products");
         Database db = Database.getInstance();
@@ -53,7 +52,8 @@ public abstract class DAO {
 
         try{
             Statement stmt = con.createStatement();
-            List<HashMap<String, Object>> results = DAO.getResults(stmt.executeQuery("SELECT * FROM "+table));
+            String statementText = "SELECT * FROM "+details[0]+where;
+            List<HashMap<String, Object>> results = DAO.getResults(stmt.executeQuery(statementText));
             return results;
         } catch (SQLException throwable) {
             FunctionLog.addLog(TAG, throwable.getMessage());
@@ -70,9 +70,8 @@ public abstract class DAO {
 
     public abstract List<HashMap<String, Object>> getFullTable();
 
-    /**
-     *
-     * */
-    public abstract int createEntry(Object dataObject);
+    public abstract int createEntry(T dataObject);
+    public abstract int updateEntry(T dataObject);
+    public abstract int removeEntry(T dataObject);
 
 }

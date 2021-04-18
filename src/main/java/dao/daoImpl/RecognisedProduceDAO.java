@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class RecognisedProduceDAO extends DAO {
+public class RecognisedProduceDAO extends DAO<Object> {
     private static final Logger logger = Logger.getLogger(FunctionMain.class.getName());
     private static final String TAG = "RecognisedProduceDAO";
 
@@ -25,6 +25,16 @@ public class RecognisedProduceDAO extends DAO {
 
     @Override
     public int createEntry(Object dataObject) {
+        return 0;
+    }
+
+    @Override
+    public int updateEntry(Object dataObject) {
+        return 0;
+    }
+
+    @Override
+    public int removeEntry(Object dataObject) {
         return 0;
     }
 }
