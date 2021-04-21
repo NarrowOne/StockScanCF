@@ -7,9 +7,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.logging.Logger;
-
+//TODO
 public final class Database {
-//    private static final Logger logger = Logger.getLogger(FunctionMain.class.getName());
     private static final Database instance = new Database();
     private static volatile Connection connection;
     private static final String URL = "jdbc:mysql://db4free.net:3306/stockscandb";
