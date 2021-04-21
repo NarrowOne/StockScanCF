@@ -22,8 +22,8 @@ public class ProduceQuickBuild implements ProduceBuilder {
 
     @Override
     public void buildID() {
-        produce.setId(0);
-    }
+        produce.setId("");
+}
 
     @Override
     public void buildName() {
@@ -33,7 +33,6 @@ public class ProduceQuickBuild implements ProduceBuilder {
     @Override
     public void buildProdCode() {
         produce.setProduct_code((String) details.get("product_code"));
-
     }
 
     @Override
@@ -103,18 +102,6 @@ public class ProduceQuickBuild implements ProduceBuilder {
 
 
     //Get line containing attribute
-//    private String getLine(String[] wordList){
-//        for(String word : wordList) {
-//            for (String line : textBlock){
-//                if (line.contains(word)) {
-//                    return line;
-//                }
-//            }
-//        }
-//
-//        return "Error: Could not find "+wordList[0]+" value";
-//    }
-
     private String getLine(String regEx){
         Pattern pattern = Pattern.compile(regEx, Pattern.CASE_INSENSITIVE);
         for (String line : textBlock){

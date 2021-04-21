@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Produce {
-    private int id;
+    private String id;
     private String name;
     private String product_code;
     private String producer;
@@ -13,8 +13,6 @@ public class Produce {
     private String weight;
     private Date expiry;
     private String[] tags;
-
-    private static final SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
 
     public Produce(){
 
@@ -26,8 +24,18 @@ public class Produce {
         this.producer = producer;
         this.batch = batch;
         this.weight = weight;
-        this.expiry = format.parse(expiry);
+        this.expiry = new SimpleDateFormat("yyyy/MM/dd").parse(expiry);
 //        this.expiry = expiry;
+    }
+
+    public Produce(String id, String name, String product_code, String producer, String batch, String weight, String expiry) throws ParseException {
+        this.id = id;
+        this.name = name;
+        this.product_code = product_code;
+        this.producer = producer;
+        this.batch = batch;
+        this.weight = weight;
+        this.expiry = new SimpleDateFormat("yyyy/MM/dd").parse(expiry);
     }
 
     public String getName() {
@@ -37,10 +45,10 @@ public class Produce {
         this.name = name;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -73,13 +81,13 @@ public class Produce {
     }
 
     public String getExpiry() {
-        return format.format(expiry);
+        return new SimpleDateFormat("yyyy/MM/dd").format(expiry);
     }
     public void setExpiry(Date expiry) {
         this.expiry = expiry;
     }
     public void setExpiry(String expiry) throws ParseException {
-        this.expiry = format.parse(expiry);
+        this.expiry = new SimpleDateFormat("dd/MM/yyyy").parse(expiry);
     }
 
     public String getJsonString(){
@@ -89,7 +97,7 @@ public class Produce {
                                         "\"producer\" : \"" +      producer+"\",\n"+
                                         "\"batch\" : \"" +         batch+"\",\n"+
                                         "\"weight\" : \"" +        weight+"\",\n"+
-                                        "\"expiry\" : \""+         expiry+"\"\n"+
+                                        "\"expiry\" : \""+         new SimpleDateFormat("yyyy/MM/dd").format(expiry)+"\"\n"+
                                       "}";
     }
 }

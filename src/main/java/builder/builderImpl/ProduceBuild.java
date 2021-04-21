@@ -19,7 +19,7 @@ public class ProduceBuild implements ProduceBuilder {
 
     @Override
     public void buildID() {
-        produce.setId((Integer) details.get("id"));
+        produce.setId(String.valueOf(details.get("id")));
     }
 
     @Override
