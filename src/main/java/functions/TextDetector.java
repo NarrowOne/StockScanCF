@@ -5,6 +5,8 @@ import builder.director.ProduceDirector;
 import com.google.cloud.vision.v1.*;
 import com.google.protobuf.ByteString;
 import dao.DAO;
+import dao.controllers.DAOController;
+import dao.controllers.RecognisedProduceDaoController;
 import dao.daoImpl.RecognisedProduceDAO;
 import utils.FunctionLog;
 
@@ -16,7 +18,7 @@ import java.util.Locale;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//TODO
 public class TextDetector {
     private static final Logger logger = Logger.getLogger(TextDetector.class.getName());
     private static final String TAG = "TextDetector";
@@ -35,7 +37,7 @@ public class TextDetector {
     }
 
     private static String detectTextInImage(byte[] imgData){
-        FunctionLog.addLog(TAG,"Begging text detection");
+        FunctionLog.addLog(TAG,"Beginning text detection");
         List<AnnotateImageRequest> requests = new ArrayList<>();
         String text = "";
 //        ByteString imgBytes = ByteString.copyFrom(imgData);
@@ -72,10 +74,10 @@ public class TextDetector {
 
         boolean name=false, code=false, producer=false;
 
-        DAO dao = new RecognisedProduceDAO();
-        List<HashMap<String, Object>> produceList = dao.getFullTable();
-        logger.warning(text);
-        logger.warning(produceList.toString());
+        DAOController controller = new RecognisedProduceDaoController(new RecognisedProduceDAO());
+        List<HashMap<String, Object>> produceList = (List<HashMap<String, Object>>) controller.read();
+//        logger.warning(text);
+//        logger.warning(produceList.toString());
 
         for (HashMap<String, Object> produce : produceList) {
             if (!name) {
@@ -94,7 +96,6 @@ public class TextDetector {
                     code = true;
                 }
             }
-            logger.warning(String.valueOf(text.contains((CharSequence) produce.get("producer"))));
             if (!producer) {
                 pattern = Pattern.compile((String) produce.get("producer"), Pattern.CASE_INSENSITIVE);
                 matcher = pattern.matcher(text);
