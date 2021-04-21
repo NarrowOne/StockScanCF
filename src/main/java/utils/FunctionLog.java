@@ -29,4 +29,8 @@ package utils;
 
         return log;
     }
-}
+
+     public static void clear() {
+        instance = new FunctionLog();
+     }
+ }
